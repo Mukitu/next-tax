@@ -15,7 +15,6 @@ import { z } from "zod";
 
 type Country = { id: string; name: string; code: string; import_tax_rate: number; export_tax_rate: number };
 type Category = { id: string; name: string; base_tax_rate: number };
-
 type FxRow = { code: string; rate: number };
 
 const formSchema = z.object({
@@ -116,7 +115,9 @@ export default function TradeCalculatorPage() {
         user_id: user.id,
         type,
         country: country?.name ?? "",
+        country_id: country?.id ?? "",
         product_category: category?.name ?? "",
+        category_id: category?.id ?? "",
         product_name: productName.trim(),
         amount,
         calculated_tax: calc.calculatedTax,
@@ -127,9 +128,9 @@ export default function TradeCalculatorPage() {
           input_currency: currency,
           input_amount: Number(amountInput || 0),
           usd_bdt_rate: usdToBdt,
-          country_code: country?.code,
-          country_id: countryId,
-          category_id: categoryId,
+          country_code: country?.code ?? "",
+          country_id: country?.id ?? "",
+          category_id: category?.id ?? "",
         },
       });
       if (error) throw error;
