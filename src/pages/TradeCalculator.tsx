@@ -15,6 +15,7 @@ import { z } from "zod";
 
 type Country = { id: string; name: string; code: string; import_tax_rate: number; export_tax_rate: number };
 type Category = { id: string; name: string; base_tax_rate: number };
+
 type FxRow = { code: string; rate: number };
 
 const formSchema = z.object({
@@ -120,6 +121,7 @@ export default function TradeCalculatorPage() {
         category_id: category?.id ?? "",
         product_name: productName.trim(),
         amount,
+        declared_value: amount, // <-- declared_value added
         calculated_tax: calc.calculatedTax,
         calculation_data: {
           rate: calc.rate,
