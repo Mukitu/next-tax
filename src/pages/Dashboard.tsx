@@ -18,6 +18,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type TaxRequest = {
   id: string;
@@ -59,6 +61,7 @@ export default function Dashboard() {
     fetchRequests();
   }, [user]);
 
+  // Prepare chart data
   const chartData = requests.map((r) => ({
     name: new Date(r.created_at).toLocaleDateString(),
     Income: r.total_income,
@@ -80,10 +83,33 @@ export default function Dashboard() {
     }
   };
 
+  // PDF Download
+  const handlePdfDownload = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Tax History Report", 14, 20);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [["Date", "Income", "Expense", "Taxable", "Tax", "Status", "Officer Note"]],
+      body: requests.map((r) => [
+        new Date(r.created_at).toLocaleDateString(),
+        r.total_income,
+        r.total_expense,
+        r.taxable_income,
+        r.calculated_tax,
+        r.status,
+        r.officer_note || "-",
+      ]),
+    });
+
+    doc.save("tax_history.pdf");
+  };
+
   return (
     <AppShell>
       {/* Mobile-only Sticky Top Bar */}
-      <div className="flex md:hidden flex-col sticky top-0 z-50 bg-white shadow-lg border-b">
+      <div className="flex md:hidden flex-col sticky top-0 z-50 bg-white shadow-md border-b">
         <div className="flex items-center justify-between py-3 px-4">
           <div className="text-xl font-bold text-blue-600">NEXT TAX</div>
           <Button size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -103,14 +129,14 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Dashboard Content */}
       <div className="container mx-auto py-10">
         <h1 className="text-3xl font-semibold mb-6">Tax History Dashboard</h1>
 
-        <div className="mb-6 flex gap-2 flex-wrap">
+        <div className="mb-6 flex flex-wrap gap-2">
           <Button onClick={fetchRequests} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </Button>
+          <Button onClick={handlePdfDownload}>Download PDF</Button>
         </div>
 
         {/* Graph */}
