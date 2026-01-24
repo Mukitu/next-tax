@@ -1,14 +1,21 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/browserClient";
 import { useAuth } from "@/providers/auth-provider";
 import { useQuery } from "@tanstack/react-query";
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
+import { useState } from "react";
 
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+// pdfMake & fonts (client-only)
+let pdfMake: any;
+if (typeof window !== "undefined") {
+  pdfMake = require("pdfmake/build/pdfmake");
+  const pdfFonts = require("pdfmake/build/vfs_fonts");
+  pdfMake.vfs = pdfFonts.pdfMake.vfs;
+}
 
 type TradeRow = {
   id: string;
@@ -25,6 +32,7 @@ function formatBDT(n: number) {
   return new Intl.NumberFormat("en-BD", { maximumFractionDigits: 2 }).format(n);
 }
 
+// Fetch user's trade records
 async function fetchMyTrade(userId: string): Promise<TradeRow[]> {
   const { data, error } = await supabase
     .from("import_export_records")
@@ -38,18 +46,27 @@ async function fetchMyTrade(userId: string): Promise<TradeRow[]> {
 
 export default function TradeHistoryPage() {
   const { user } = useAuth();
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
 
   const q = useQuery({
     queryKey: ["trade_history", user?.id ?? null],
     queryFn: () => fetchMyTrade(user!.id),
     enabled: Boolean(user?.id),
+    onError: (err: any) => console.error(err),
   });
 
   const rows = q.data ?? [];
+  const paginatedRows = rows.slice(page * pageSize, (page + 1) * pageSize);
 
   // PDF Download function
   const downloadPDF = () => {
     if (!rows.length) return;
+
+    // Summary for PDF
+    const totalAmount = rows.reduce((acc, r) => acc + r.amount, 0);
+    const totalTax = rows.reduce((acc, r) => acc + r.calculated_tax, 0);
+
     const body = [
       ["Date", "Type", "Country", "Category", "Product", "Amount (৳)", "Tax (৳)"],
       ...rows.map((r) => [
@@ -58,8 +75,8 @@ export default function TradeHistoryPage() {
         r.country,
         r.product_category,
         r.product_name,
-        formatBDT(r.amount),
-        formatBDT(r.calculated_tax),
+        { text: formatBDT(r.amount), color: r.amount >= 0 ? "green" : "red" },
+        { text: formatBDT(r.calculated_tax), color: r.calculated_tax >= 0 ? "green" : "red" },
       ]),
     ];
 
@@ -69,6 +86,18 @@ export default function TradeHistoryPage() {
       content: [
         { text: "NEXT TAX Import / Export", style: "header" },
         { text: `Generated: ${new Date().toLocaleString()}\n\n`, style: "subheader" },
+
+        // Summary
+        {
+          columns: [
+            { text: `Total Amount: ৳ ${formatBDT(totalAmount)}`, bold: true },
+            { text: `Total Tax: ৳ ${formatBDT(totalTax)}`, bold: true },
+          ],
+          columnGap: 20,
+          margin: [0, 0, 0, 10],
+        },
+
+        // Table
         {
           table: {
             headerRows: 1,
@@ -124,28 +153,41 @@ export default function TradeHistoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.length === 0 ? (
+                  {paginatedRows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
                         No records yet.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    rows.slice(0, 40).map((r) => (
+                    paginatedRows.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell>{new Date(r.created_at).toLocaleDateString("en-GB")}</TableCell>
                         <TableCell className="capitalize">{r.type}</TableCell>
                         <TableCell>{r.country}</TableCell>
                         <TableCell>{r.product_category}</TableCell>
                         <TableCell>{r.product_name}</TableCell>
-                        <TableCell className="text-right">৳ {formatBDT(Number(r.amount))}</TableCell>
-                        <TableCell className="text-right font-medium">৳ {formatBDT(Number(r.calculated_tax))}</TableCell>
+                        <TableCell className="text-right text-green-600 font-medium">৳ {formatBDT(r.amount)}</TableCell>
+                        <TableCell className="text-right text-green-600 font-medium">৳ {formatBDT(r.calculated_tax)}</TableCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {rows.length > pageSize && (
+              <div className="mt-4 flex justify-between">
+                <Button onClick={() => setPage((p) => Math.max(p - 1, 0))} disabled={page === 0}>
+                  Previous
+                </Button>
+                <div>Page {page + 1} of {Math.ceil(rows.length / pageSize)}</div>
+                <Button onClick={() => setPage((p) => Math.min(p + 1, Math.floor(rows.length / pageSize)))} disabled={(page + 1) * pageSize >= rows.length}>
+                  Next
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
