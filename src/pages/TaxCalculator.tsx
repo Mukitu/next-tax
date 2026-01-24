@@ -3,22 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/browserClient";
 import { useAuth } from "@/providers/auth-provider";
 import { calculateBdTax } from "@/lib/tax/bdTax";
@@ -28,137 +15,126 @@ import { toast } from "sonner";
 
 type FiscalYear = { id: string; year_label: string };
 type TaxSlab = { id: string; slab_from: number; slab_to: number | null; rate: number };
+type TaxBreakdown = { from: number; to: number | null; amountInSlab: number; taxForSlab: number };
 
-export default function TaxCalculatorPage() {
+export default function TaxRequestPage() {
   const { user } = useAuth();
-
   const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
   const [selectedYearId, setSelectedYearId] = useState<string | null>(null);
   const [taxSlabs, setTaxSlabs] = useState<TaxSlab[]>([]);
 
   const form = useForm<{ totalIncome: number; totalExpense: number }>({
-    defaultValues: {
-      totalIncome: 0,
-      totalExpense: 0,
-    },
+    defaultValues: { totalIncome: 0, totalExpense: 0 },
   });
 
   const wIncome = form.watch("totalIncome");
   const wExpense = form.watch("totalExpense");
 
-  /* =======================
-     Load Fiscal Years
-  ======================== */
+  // Load fiscal years
   useEffect(() => {
-    supabase
-      .from("fiscal_years")
-      .select("id, year_label")
-      .order("start_date", { ascending: false })
-      .then(({ data, error }) => {
-        if (error) toast.error(error.message);
-        else setFiscalYears(data ?? []);
-      });
+    async function fetchFiscalYears() {
+      const { data, error } = await supabase
+        .from("fiscal_years")
+        .select("id, year_label")
+        .order("start_date", { ascending: false });
+      if (error) toast.error(error.message);
+      else setFiscalYears(data ?? []);
+    }
+    fetchFiscalYears();
   }, []);
 
-  /* =======================
-     Load Tax Slabs
-  ======================== */
+  // Load slabs when year changes
   useEffect(() => {
     if (!selectedYearId) return;
-
-    supabase
-      .from("tax_slabs")
-      .select("id, slab_from, slab_to, rate")
-      .eq("fiscal_year_id", selectedYearId)
-      .eq("is_active", true)
-      .order("slab_from")
-      .then(({ data, error }) => {
-        if (error) toast.error(error.message);
-        else setTaxSlabs(data ?? []);
-      });
+    async function fetchSlabs() {
+      const { data, error } = await supabase
+        .from("tax_slabs")
+        .select("id, slab_from, slab_to, rate")
+        .eq("fiscal_year_id", selectedYearId)
+        .eq("is_active", true)
+        .order("slab_from");
+      if (error) toast.error(error.message);
+      else setTaxSlabs(data ?? []);
+    }
+    fetchSlabs();
   }, [selectedYearId]);
 
-  /* =======================
-     Tax Calculation
-  ======================== */
   const result = useMemo(() => {
-    const slabs = taxSlabs.map((s) => ({
-      from: s.slab_from,
-      to: s.slab_to,
-      rate: s.rate,
-    }));
-
+    const slabs: TaxBreakdown[] = taxSlabs.map((s) => ({ from: s.slab_from, to: s.slab_to, amountInSlab: 0, taxForSlab: 0 }));
     return calculateBdTax({
       totalIncome: Number(wIncome || 0),
       totalExpense: Number(wExpense || 0),
       fiscalYear: fiscalYears.find((y) => y.id === selectedYearId)?.year_label,
-      slabs,
+      slabs: slabs.length ? slabs : undefined,
     });
   }, [wIncome, wExpense, taxSlabs, selectedYearId, fiscalYears]);
 
-  const formatBDT = (n: number) =>
-    new Intl.NumberFormat("en-BD", { maximumFractionDigits: 2 }).format(n);
+  const formatBDT = (n: number) => new Intl.NumberFormat("en-BD", { maximumFractionDigits: 2 }).format(n);
 
-  /* =======================
-     Save History
-  ======================== */
-  const onSaveHistory = async () => {
+  const onSaveDraft = async () => {
     if (!user) return;
-
-    const { error } = await supabase.from("tax_calculations").insert({
-      user_id: user.id,
-      fiscal_year: result.fiscalYear,
-      total_income: result.totalIncome,
-      total_expense: result.totalExpense,
-      taxable_income: result.taxableIncome,
-      calculated_tax: result.calculatedTax,
-      calculation_data: result,
-    });
-
-    if (error) toast.error(error.message);
-    else toast.success("Saved to history");
+    try {
+      const payload = result;
+      const { error } = await supabase.from("tax_requests").insert({
+        citizen_id: user.id,
+        fiscal_year: payload.fiscalYear,
+        total_income: payload.totalIncome,
+        total_expense: payload.totalExpense,
+        taxable_income: payload.taxableIncome,
+        calculated_tax: payload.calculatedTax,
+        calculation_data: JSON.stringify({
+          totalIncome: payload.totalIncome,
+          totalExpense: payload.totalExpense,
+          taxableIncome: payload.taxableIncome,
+          breakdown: payload.breakdown,
+        }),
+        status: "draft",
+      });
+      if (error) throw error;
+      toast.success("Saved as draft");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Save failed");
+    }
   };
 
-  /* =======================
-     Request Officer Review
-  ======================== */
-  const onRequestReview = async () => {
+  const onSubmitRequest = async () => {
     if (!user) return;
-
-    const { error } = await supabase.from("tax_requests").insert({
-      citizen_id: user.id,
-      fiscal_year: result.fiscalYear,
-      total_income: result.totalIncome,
-      total_expense: result.totalExpense,
-      taxable_income: result.taxableIncome,
-      calculated_tax: result.calculatedTax,
-      calculation_data: result,
-      status: "pending",
-    });
-
-    if (error) toast.error(error.message);
-    else toast.success("Tax request sent for officer review");
+    try {
+      const payload = result;
+      const { error } = await supabase.from("tax_requests").insert({
+        citizen_id: user.id,
+        fiscal_year: payload.fiscalYear,
+        total_income: payload.totalIncome,
+        total_expense: payload.totalExpense,
+        taxable_income: payload.taxableIncome,
+        calculated_tax: payload.calculatedTax,
+        calculation_data: JSON.stringify({
+          totalIncome: payload.totalIncome,
+          totalExpense: payload.totalExpense,
+          taxableIncome: payload.taxableIncome,
+          breakdown: payload.breakdown,
+        }),
+        status: "submitted",
+      });
+      if (error) throw error;
+      toast.success("Request submitted for officer review");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Submit failed");
+    }
   };
 
-  /* =======================
-     Reset Form
-  ======================== */
   const onReset = () => {
-    form.reset({
-      totalIncome: 0,
-      totalExpense: 0,
-    });
+    form.reset({ totalIncome: 0, totalExpense: 0 });
     setSelectedYearId(null);
-    setTaxSlabs([]);
   };
 
   return (
     <AppShell>
       <div className="container py-10">
-        <h1 className="text-3xl font-semibold mb-6">Tax Calculator</h1>
+        <h1 className="text-3xl font-semibold mb-4">Tax Request / Calculator</h1>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* ================= Inputs ================= */}
+          {/* Inputs */}
           <Card>
             <CardHeader>
               <CardTitle>Inputs</CardTitle>
@@ -166,13 +142,13 @@ export default function TaxCalculatorPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Fiscal Year</Label>
-                <Select value={selectedYearId ?? ""} onValueChange={setSelectedYearId}>
-                  <SelectTrigger />
+                <Select value={selectedYearId ?? ""} onValueChange={(v) => setSelectedYearId(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {fiscalYears.map((y) => (
-                      <SelectItem key={y.id} value={y.id}>
-                        {y.year_label}
-                      </SelectItem>
+                      <SelectItem key={y.id} value={y.id}>{y.year_label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -180,32 +156,28 @@ export default function TaxCalculatorPage() {
 
               <div>
                 <Label>Total Income</Label>
-                <Input type="number" {...form.register("totalIncome", { valueAsNumber: true })} />
+                <Input type="number" {...form.register("totalIncome")} />
               </div>
 
               <div>
                 <Label>Total Expense</Label>
-                <Input type="number" {...form.register("totalExpense", { valueAsNumber: true })} />
+                <Input type="number" {...form.register("totalExpense")} />
               </div>
 
               <Separator />
 
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={onSaveHistory}>Save to History</Button>
-                <Button variant="secondary" onClick={onRequestReview}>
-                  Request Officer Review
-                </Button>
-                <Button variant="destructive" onClick={onReset}>
-                  Reset
-                </Button>
+              <div className="flex gap-2">
+                <Button onClick={onSaveDraft}>Save Draft</Button>
+                <Button onClick={onSubmitRequest}>Request Officer Review</Button>
+                <Button variant="outline" onClick={onReset}>Reset</Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* ================= Breakdown ================= */}
+          {/* Breakdown */}
           <Card>
             <CardHeader>
-              <CardTitle>Tax Breakdown</CardTitle>
+              <CardTitle>Breakdown</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -218,26 +190,18 @@ export default function TaxCalculatorPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {result.breakdown.map((b, i) => (
+                  {result.breakdown.map((l, i) => (
                     <TableRow key={i}>
-                      <TableCell>
-                        ৳ {formatBDT(b.from)} – {b.to ? `৳ ${formatBDT(b.to)}` : "Above"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {Math.round(b.rate * 100)}%
-                      </TableCell>
-                      <TableCell className="text-right">
-                        ৳ {formatBDT(b.amountInSlab)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        ৳ {formatBDT(b.taxForSlab)}
-                      </TableCell>
+                      <TableCell>৳ {formatBDT(l.from)} – {l.to ? `৳ ${formatBDT(l.to)}` : "Above"}</TableCell>
+                      <TableCell className="text-right">{Math.round(l.rate * 100)}%</TableCell>
+                      <TableCell className="text-right">৳ {formatBDT(l.amountInSlab)}</TableCell>
+                      <TableCell className="text-right">৳ {formatBDT(l.taxForSlab)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
 
-              <div className="mt-4 space-y-1 font-medium">
+              <div className="mt-4">
                 <div>Taxable Income: ৳ {formatBDT(result.taxableIncome)}</div>
                 <div>Calculated Tax: ৳ {formatBDT(result.calculatedTax)}</div>
               </div>
