@@ -16,18 +16,15 @@ import { toast } from "sonner";
 type FiscalYear = { id: string; year_label: string };
 type TaxSlab = { id: string; slab_from: number; slab_to: number | null; rate: number };
 type TaxBreakdown = { from: number; to: number | null; amountInSlab: number; taxForSlab: number };
-
 type TaxRequest = {
   id: string;
-  citizen_id: string;
   fiscal_year: string;
   total_income: number;
   total_expense: number;
   taxable_income: number;
   calculated_tax: number;
-  calculation_data: any;
-  status: "draft" | "submitted" | "approved" | "rejected";
-  created_at: string;
+  status: string;
+  citizen?: { tin_number: string };
 };
 
 export default function TaxRequestPage() {
@@ -85,7 +82,7 @@ export default function TaxRequestPage() {
 
   const formatBDT = (n: number) => new Intl.NumberFormat("en-BD", { maximumFractionDigits: 2 }).format(n);
 
-  // Save to History → tax_calculations table
+  // Save to History → tax_calculations
   const onSave = async () => {
     if (!user) return;
     try {
@@ -105,7 +102,7 @@ export default function TaxRequestPage() {
     }
   };
 
-  // Request Officer Review → tax_requests table
+  // Request Officer Review → tax_requests
   const onSubmitRequest = async () => {
     if (!user) return;
     try {
@@ -127,18 +124,12 @@ export default function TaxRequestPage() {
       });
       if (error) throw error;
       toast.success("Request submitted for officer review");
-      fetchRequests(); // Refresh requests after submit
+      fetchRequests(); // refresh list
     } catch (e: any) {
       toast.error(e?.message ?? "Submit failed");
     }
   };
 
-  const onReset = () => {
-    form.reset({ totalIncome: undefined, totalExpense: undefined });
-    setSelectedYearId(null);
-  };
-
-  // Fetch requests for citizen
   const fetchRequests = async () => {
     if (!user) return;
     const { data, error } = await supabase
@@ -146,20 +137,24 @@ export default function TaxRequestPage() {
       .select(`
         *,
         citizen:citizen_id (
-          id,
           tin_number
         )
       `)
       .eq("citizen_id", user.id)
       .order("created_at", { ascending: false });
 
-    if (error) toast.error(error.message);
+    if (error) console.log(error);
     else setRequests(data ?? []);
   };
 
   useEffect(() => {
     fetchRequests();
   }, [user]);
+
+  const onReset = () => {
+    form.reset({ totalIncome: undefined, totalExpense: undefined });
+    setSelectedYearId(null);
+  };
 
   return (
     <AppShell>
@@ -238,42 +233,33 @@ export default function TaxRequestPage() {
                 <div>Taxable Income: ৳ {formatBDT(result.taxableIncome)}</div>
                 <div>Calculated Tax: ৳ {formatBDT(result.calculatedTax)}</div>
               </div>
+
+              {/* Requests list */}
+              <Separator className="my-4" />
+              <h2 className="text-lg font-medium mb-2">Your Requests</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fiscal Year</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>TIN</TableHead>
+                    <TableHead className="text-right">Calculated Tax</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requests.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>{r.fiscal_year}</TableCell>
+                      <TableCell>{r.status}</TableCell>
+                      <TableCell>{r.citizen?.tin_number ?? "N/A"}</TableCell>
+                      <TableCell className="text-right">৳ {formatBDT(r.calculated_tax)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
-
-        {/* Requests Table */}
-        <Card className="mt-10">
-          <CardHeader>
-            <CardTitle>Your Requests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>TIN</TableHead>
-                  <TableHead>Fiscal Year</TableHead>
-                  <TableHead>Total Income</TableHead>
-                  <TableHead>Taxable Income</TableHead>
-                  <TableHead>Calculated Tax</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell>{r.citizen?.tin_number ?? "N/A"}</TableCell>
-                    <TableCell>{r.fiscal_year}</TableCell>
-                    <TableCell>৳ {formatBDT(r.total_income)}</TableCell>
-                    <TableCell>৳ {formatBDT(r.taxable_income)}</TableCell>
-                    <TableCell>৳ {formatBDT(r.calculated_tax)}</TableCell>
-                    <TableCell>{r.status}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
       </div>
     </AppShell>
   );
