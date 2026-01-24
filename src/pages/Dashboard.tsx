@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,16 +99,29 @@ export default function Dashboard() {
 
   return (
     <AppShell>
-      <div className="container py-10">
-        <h1 className="text-3xl font-semibold mb-6">Tax History Dashboard</h1>
-
-        <div className="mb-4 flex gap-2">
-          <Button onClick={fetchRequests} disabled={loading}>
-            {loading ? "Loading..." : "Refresh"}
-          </Button>
-          <Button onClick={handlePdfDownload}>Download PDF</Button>
+      <div className="container py-10 space-y-6">
+        {/* Dashboard Top Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <h1 className="text-3xl font-semibold tracking-tight">Tax History Dashboard</h1>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => (window.location.href = "https://next-tax.vercel.app/tax")}
+            >
+              Go to Tax Calculator
+            </Button>
+            <Button
+              onClick={() => (window.location.href = "https://next-tax.vercel.app/trade")}
+            >
+              Go to Import/Export Calculator
+            </Button>
+            <Button onClick={fetchRequests} disabled={loading}>
+              {loading ? "Loading..." : "Refresh"}
+            </Button>
+            <Button onClick={handlePdfDownload}>Download PDF</Button>
+          </div>
         </div>
 
+        {/* Graph */}
         <div className="mb-10">
           <Card>
             <CardHeader>
@@ -134,6 +149,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Table */}
         <Card>
           <CardHeader>
             <CardTitle>Tax History Table</CardTitle>
