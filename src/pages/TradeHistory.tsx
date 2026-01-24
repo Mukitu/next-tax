@@ -1,10 +1,14 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/browserClient";
 import { useAuth } from "@/providers/auth-provider";
 import { useQuery } from "@tanstack/react-query";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 type TradeRow = {
   id: string;
@@ -43,6 +47,45 @@ export default function TradeHistoryPage() {
 
   const rows = q.data ?? [];
 
+  // PDF Download function
+  const downloadPDF = () => {
+    if (!rows.length) return;
+    const body = [
+      ["Date", "Type", "Country", "Category", "Product", "Amount (৳)", "Tax (৳)"],
+      ...rows.map((r) => [
+        new Date(r.created_at).toLocaleDateString("en-GB"),
+        r.type,
+        r.country,
+        r.product_category,
+        r.product_name,
+        formatBDT(r.amount),
+        formatBDT(r.calculated_tax),
+      ]),
+    ];
+
+    const docDefinition: any = {
+      pageSize: "A4",
+      pageMargins: [40, 60, 40, 60],
+      content: [
+        { text: "NEXT TAX Import / Export", style: "header" },
+        { text: `Generated: ${new Date().toLocaleString()}\n\n`, style: "subheader" },
+        {
+          table: {
+            headerRows: 1,
+            widths: ["auto", "auto", "auto", "auto", "*", "auto", "auto"],
+            body: body,
+          },
+        },
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, alignment: "center", margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 10, italics: true, alignment: "center", margin: [0, 0, 0, 10] },
+      },
+    };
+
+    pdfMake.createPdf(docDefinition).download("NEXT_TAX_Import_Export.pdf");
+  };
+
   return (
     <AppShell>
       <div className="container py-10">
@@ -51,9 +94,14 @@ export default function TradeHistoryPage() {
             <h1 className="text-3xl font-semibold tracking-tight">Import / Export History</h1>
             <p className="mt-2 text-muted-foreground">Your saved import/export records.</p>
           </div>
-          <Button asChild>
-            <a href="/trade">New record</a>
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={downloadPDF} disabled={rows.length === 0}>
+              Download PDF
+            </Button>
+            <Button asChild>
+              <a href="/trade">New record</a>
+            </Button>
+          </div>
         </div>
 
         <Card className="shadow-[var(--shadow-elev)]">
@@ -62,8 +110,8 @@ export default function TradeHistoryPage() {
             <div className="text-sm text-muted-foreground">{q.isLoading ? "Loading..." : `${rows.length} records`}</div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-hidden rounded-lg border">
-              <Table>
+            <div className="overflow-x-auto rounded-lg border">
+              <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
