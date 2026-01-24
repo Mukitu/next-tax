@@ -1,12 +1,10 @@
-"use client";
-
+import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/browserClient";
 import { useAuth } from "@/providers/auth-provider";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
 
 type TradeRow = {
   id: string;
@@ -34,9 +32,8 @@ async function fetchMyTrade(userId: string): Promise<TradeRow[]> {
   return (data ?? []) as TradeRow[];
 }
 
-export default function TradeHistoryClient() {
+export default function TradeHistoryPage() {
   const { user } = useAuth();
-  const [pdfMake, setPdfMake] = useState<any>(null);
 
   const q = useQuery({
     queryKey: ["trade_history", user?.id ?? null],
@@ -46,108 +43,64 @@ export default function TradeHistoryClient() {
 
   const rows = q.data ?? [];
 
-  // dynamic import of pdfMake for client only
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      import("pdfmake/build/pdfmake").then((pdf) => {
-        import("pdfmake/build/vfs_fonts").then((fonts) => {
-          pdf.vfs = fonts.pdfMake.vfs;
-          setPdfMake(pdf);
-        });
-      });
-    }
-  }, []);
-
-  const downloadPDF = () => {
-    if (!rows.length || !pdfMake) return;
-
-    const totalAmount = rows.reduce((acc, r) => acc + r.amount, 0);
-    const totalTax = rows.reduce((acc, r) => acc + r.calculated_tax, 0);
-
-    const body = [
-      ["Date","Type","Country","Category","Product","Amount (৳)","Tax (৳)"],
-      ...rows.map((r) => [
-        new Date(r.created_at).toLocaleDateString("en-GB"),
-        r.type,
-        r.country,
-        r.product_category,
-        r.product_name,
-        { text: formatBDT(r.amount), color: "green" },
-        { text: formatBDT(r.calculated_tax), color: "blue" }
-      ])
-    ];
-
-    const docDef: any = {
-      pageSize: "A4",
-      pageMargins: [40,60,40,60],
-      content: [
-        { text: "NEXT TAX Import / Export", style:"header"},
-        { text: `Generated: ${new Date().toLocaleString()}\n\n`, style:"subheader"},
-        {
-          table: { headerRows:1, widths:["auto","auto","auto","auto","*","auto","auto"], body }
-        },
-        {
-          text: `\nTotal Amount: ৳ ${formatBDT(totalAmount)}  |  Total Tax: ৳ ${formatBDT(totalTax)}  |  Final: ৳ ${formatBDT(totalAmount+totalTax)}`,
-          style: "summary",
-          bold:true
-        }
-      ],
-      styles:{
-        header:{fontSize:18,bold:true,alignment:"center",margin:[0,0,0,10]},
-        subheader:{fontSize:10,italics:true,alignment:"center",margin:[0,0,0,10]},
-        summary:{fontSize:12,alignment:"right",margin:[0,10,0,0]}
-      }
-    };
-
-    pdfMake.createPdf(docDef).download("NEXT_TAX_Import_Export.pdf");
-  };
-
   return (
-    <div>
-      <div className="flex justify-between items-end mb-4">
-        <h2 className="text-2xl font-semibold">Import / Export History</h2>
-        <div className="flex gap-2">
-          <Button onClick={downloadPDF} disabled={!pdfMake || !rows.length}>Download PDF</Button>
-          <Button asChild><a href="/trade">New record</a></Button>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Records</CardTitle>
-          <div>{q.isLoading ? "Loading..." : `${rows.length} records`}</div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table className="min-w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Tax</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map(r => (
-                  <TableRow key={r.id}>
-                    <TableCell>{new Date(r.created_at).toLocaleDateString("en-GB")}</TableCell>
-                    <TableCell className="capitalize">{r.type}</TableCell>
-                    <TableCell>{r.country}</TableCell>
-                    <TableCell>{r.product_category}</TableCell>
-                    <TableCell>{r.product_name}</TableCell>
-                    <TableCell className="text-right text-green-600 font-medium">৳ {formatBDT(r.amount)}</TableCell>
-                    <TableCell className="text-right text-blue-600 font-medium">৳ {formatBDT(r.calculated_tax)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+    <AppShell>
+      <div className="container py-10">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Import / Export History</h1>
+            <p className="mt-2 text-muted-foreground">Your saved import/export records.</p>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <Button asChild>
+            <a href="/trade">New record</a>
+          </Button>
+        </div>
+
+        <Card className="shadow-[var(--shadow-elev)]">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Records</CardTitle>
+            <div className="text-sm text-muted-foreground">{q.isLoading ? "Loading..." : `${rows.length} records`}</div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Tax</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                        No records yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    rows.slice(0, 40).map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell>{new Date(r.created_at).toLocaleDateString("en-GB")}</TableCell>
+                        <TableCell className="capitalize">{r.type}</TableCell>
+                        <TableCell>{r.country}</TableCell>
+                        <TableCell>{r.product_category}</TableCell>
+                        <TableCell>{r.product_name}</TableCell>
+                        <TableCell className="text-right">৳ {formatBDT(Number(r.amount))}</TableCell>
+                        <TableCell className="text-right font-medium">৳ {formatBDT(Number(r.calculated_tax))}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AppShell>
   );
 }
