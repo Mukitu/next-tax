@@ -23,9 +23,9 @@ const topMember: Member = {
 };
 
 const members: Member[] = [
-  { name: "Fahad Bin Aref", role: "Tester/QA", image: fahad },
-  { name: "Rayhan Kobir Shah", role: "Project Manager", image: rayhan },
-  { name: "Md Raisul", role: "Data Manager", image: raisul },
+  { name: "Fahad Bin Aref", role: "Designer", image: fahad },
+  { name: "Rayhan Kobir Shah", role: "Planner", image: rayhan },
+  { name: "Md Raisul", role: "Project Manager", image: raisul },
   { name: "Israt Jahan Aisha", role: "Documentation", image: esha },
 ];
 
