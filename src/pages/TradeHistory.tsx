@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,6 +45,11 @@ export default function TradeHistoryPage() {
 
   const rows = q.data ?? [];
 
+  // Calculate total amounts
+  const totalAmount = rows.reduce((acc, r) => acc + r.amount, 0);
+  const totalTax = rows.reduce((acc, r) => acc + r.calculated_tax, 0);
+  const finalTotal = totalAmount + totalTax;
+
   return (
     <AppShell>
       <div className="container py-10">
@@ -73,12 +80,13 @@ export default function TradeHistoryPage() {
                     <TableHead>Product</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Tax</TableHead>
+                    <TableHead className="text-right">Final</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                      <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
                         No records yet.
                       </TableCell>
                     </TableRow>
@@ -90,10 +98,23 @@ export default function TradeHistoryPage() {
                         <TableCell>{r.country}</TableCell>
                         <TableCell>{r.product_category}</TableCell>
                         <TableCell>{r.product_name}</TableCell>
-                        <TableCell className="text-right">৳ {formatBDT(Number(r.amount))}</TableCell>
-                        <TableCell className="text-right font-medium">৳ {formatBDT(Number(r.calculated_tax))}</TableCell>
+                        <TableCell className="text-right">৳ {formatBDT(r.amount)}</TableCell>
+                        <TableCell className="text-right font-medium">৳ {formatBDT(r.calculated_tax)}</TableCell>
+                        <TableCell className="text-right font-bold text-green-600">৳ {formatBDT(r.amount + r.calculated_tax)}</TableCell>
                       </TableRow>
                     ))
+                  )}
+
+                  {/* Total Row */}
+                  {rows.length > 0 && (
+                    <TableRow className="bg-muted/10 font-semibold">
+                      <TableCell colSpan={5} className="text-right">
+                        Total
+                      </TableCell>
+                      <TableCell className="text-right">৳ {formatBDT(totalAmount)}</TableCell>
+                      <TableCell className="text-right">৳ {formatBDT(totalTax)}</TableCell>
+                      <TableCell className="text-right text-green-700">৳ {formatBDT(finalTotal)}</TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
