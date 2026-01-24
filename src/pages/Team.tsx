@@ -7,6 +7,7 @@ import rayhan from "@/assets/team/rayhan.jpg";
 import raisul from "@/assets/team/raisul.jpg";
 import esha from "@/assets/team/esha.jpg";
 import { useI18n } from "@/providers/i18n-provider";
+import { motion } from "framer-motion";
 
 type Member = {
   name: string;
@@ -31,24 +32,46 @@ const members: Member[] = [
 
 function MemberCard({ m, highlight }: { m: Member; highlight?: boolean }) {
   return (
-    <Card className={highlight ? "shadow-[var(--shadow-elev)]" : ""}>
-      <CardHeader>
-        <div className={highlight ? "mx-auto h-24 w-24 overflow-hidden rounded-full ring-2 ring-primary/30" : "h-16 w-16 overflow-hidden rounded-full ring-1 ring-border"}>
-          <img src={m.image} alt={`${m.name} photo`} className="h-full w-full object-cover" loading="lazy" />
-        </div>
-        <CardTitle className={highlight ? "text-center text-xl" : "text-base"}>{m.name}</CardTitle>
-      </CardHeader>
-      <CardContent className={highlight ? "text-center" : ""}>
-        <div className="text-sm text-muted-foreground">{m.role}</div>
-        {m.link ? (
-          <Button asChild variant="outline" size="sm" className="mt-4">
-            <a href={m.link} target="_blank" rel="noreferrer">
-              Website
-            </a>
-          </Button>
-        ) : null}
-      </CardContent>
-    </Card>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
+      <Card
+        className={`transition-transform duration-300 hover:scale-105 ${
+          highlight ? "shadow-[var(--shadow-elev)] border-2 border-primary" : "shadow-md"
+        }`}
+      >
+        <CardHeader className="flex flex-col items-center">
+          <div
+            className={`overflow-hidden rounded-full ${
+              highlight ? "h-28 w-28 ring-4 ring-primary/40" : "h-20 w-20 ring-1 ring-border"
+            }`}
+          >
+            <img
+              src={m.image}
+              alt={`${m.name} photo`}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <CardTitle className={`mt-3 text-center ${highlight ? "text-xl font-bold" : "text-base font-medium"}`}>
+            {m.name}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center text-center gap-2">
+          <div className="text-sm text-muted-foreground">{m.role}</div>
+          {m.link && (
+            <Button asChild variant={highlight ? "default" : "outline"} size="sm" className="mt-2">
+              <a href={m.link} target="_blank" rel="noreferrer">
+                Website
+              </a>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -56,28 +79,43 @@ export default function TeamPage() {
   const { t } = useI18n();
   return (
     <AppShell>
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 opacity-90" style={{ background: "var(--gradient-primary)" }} aria-hidden="true" />
-        <div className="absolute inset-0 bg-background/75" aria-hidden="true" />
+      <section className="relative overflow-hidden py-16">
+        {/* Background Gradient */}
+        <div
+          className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 opacity-80"
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-background/70" aria-hidden="true" />
 
-        <div className="container relative py-10">
-          <div className="mb-10 text-center">
-            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{t("team.title")}</h1>
-            <p className="mt-2 text-muted-foreground">{t("team.subtitle")}</p>
+        <div className="container relative mx-auto px-4">
+          {/* Header */}
+          <div className="mb-12 text-center">
+            <motion.h1
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl md:text-4xl font-bold text-white tracking-tight"
+            >
+              {t("team.title")}
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="mt-3 text-gray-100 max-w-2xl mx-auto"
+            >
+              {t("team.subtitle")}
+            </motion.p>
           </div>
 
-          <div className="mx-auto max-w-2xl">
+          {/* Top Member */}
+          <div className="mx-auto max-w-xs md:max-w-sm">
             <MemberCard m={topMember} highlight />
           </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {members.slice(0, 2).map((m) => (
-              <MemberCard key={m.name} m={m} />
-            ))}
-          </div>
-
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {members.slice(2).map((m) => (
+          {/* Other Members Grid */}
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+            {members.map((m) => (
               <MemberCard key={m.name} m={m} />
             ))}
           </div>
