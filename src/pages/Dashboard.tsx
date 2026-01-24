@@ -1,16 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/browserClient";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 type TaxRequest = {
   id: string;
@@ -51,7 +59,7 @@ export default function Dashboard() {
     fetchRequests();
   }, [user]);
 
-  // Prepare data for graph
+  // Chart data
   const chartData = requests.map((r) => ({
     name: new Date(r.created_at).toLocaleDateString(),
     Income: r.total_income,
@@ -73,64 +81,70 @@ export default function Dashboard() {
     }
   };
 
-  // PDF Download
-  const handlePdfDownload = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Tax History Report", 14, 20);
-
-    // Table
-    autoTable(doc, {
-      startY: 30,
-      head: [["Date", "Income", "Expense", "Taxable", "Tax", "Status", "Officer Note"]],
-      body: requests.map((r) => [
-        new Date(r.created_at).toLocaleDateString(),
-        r.total_income,
-        r.total_expense,
-        r.taxable_income,
-        r.calculated_tax,
-        r.status,
-        r.officer_note || "-",
-      ]),
-    });
-
-    doc.save("tax_history.pdf");
-  };
+  // Sticky Navbar
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <AppShell>
-      <div className="container py-10 space-y-6">
-        {/* Dashboard Top Buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <h1 className="text-3xl font-semibold tracking-tight">Tax History Dashboard</h1>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={() => (window.location.href = "https://next-tax.vercel.app/tax")}
-            >
-              Go to Tax Calculator
-            </Button>
-            <Button
-              onClick={() => (window.location.href = "https://next-tax.vercel.app/trade")}
-            >
-              Go to Import/Export Calculator
-            </Button>
-            <Button onClick={fetchRequests} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </Button>
-            <Button onClick={handlePdfDownload}>Download PDF</Button>
+      {/* Sticky Top Bar */}
+      <div className="sticky top-0 z-50 bg-white shadow-lg border-b">
+        <div className="container mx-auto flex items-center justify-between py-3 px-4 md:px-0">
+          <div className="text-xl font-bold text-blue-600">NEXT TAX</div>
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex gap-6 font-medium text-gray-700">
+            <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
+            <a href="/guide" className="hover:text-blue-600 transition-colors">Guide</a>
+            <a href="/team" className="hover:text-blue-600 transition-colors">Team</a>
+            <a href="/dashboard" className="hover:text-blue-600 transition-colors">Dashboard</a>
+            <a href="/tax" className="hover:text-blue-600 transition-colors">Tax Calculator</a>
+            <a href="/trade" className="hover:text-blue-600 transition-colors">Import/Export</a>
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <Button size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? "Close" : "Menu"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden flex flex-col gap-2 py-2 px-4 border-t bg-white shadow-md">
+            <a href="/" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Home</a>
+            <a href="/guide" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Guide</a>
+            <a href="/team" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Team</a>
+            <a href="/dashboard" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Dashboard</a>
+            <a href="/tax" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Tax Calculator</a>
+            <a href="/trade" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Import/Export</a>
+          </div>
+        )}
+      </div>
+
+      {/* Dashboard Content */}
+      <div className="container mx-auto py-10">
+        <h1 className="text-3xl font-semibold mb-6">Tax History Dashboard</h1>
+
+        <div className="mb-6 flex gap-2 flex-wrap">
+          <Button onClick={fetchRequests} disabled={loading}>
+            {loading ? "Loading..." : "Refresh"}
+          </Button>
         </div>
 
         {/* Graph */}
         <div className="mb-10">
-          <Card>
+          <Card className="shadow-md">
             <CardHeader>
               <CardTitle>Tax History Graph</CardTitle>
             </CardHeader>
             <CardContent>
               {requests.length ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -143,14 +157,14 @@ export default function Dashboard() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <p>No data to display</p>
+                <p className="text-gray-500">No data to display</p>
               )}
             </CardContent>
           </Card>
         </div>
 
         {/* Table */}
-        <Card>
+        <Card className="shadow-md">
           <CardHeader>
             <CardTitle>Tax History Table</CardTitle>
           </CardHeader>
