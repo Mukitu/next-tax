@@ -24,7 +24,7 @@ export default function TaxRequestPage() {
   const [taxSlabs, setTaxSlabs] = useState<TaxSlab[]>([]);
 
   const form = useForm<{ totalIncome: number; totalExpense: number }>({
-    defaultValues: { totalIncome: 0, totalExpense: 0 },
+    defaultValues: { totalIncome: undefined, totalExpense: undefined },
   });
 
   const wIncome = form.watch("totalIncome");
@@ -71,7 +71,7 @@ export default function TaxRequestPage() {
 
   const formatBDT = (n: number) => new Intl.NumberFormat("en-BD", { maximumFractionDigits: 2 }).format(n);
 
-  const onSaveDraft = async () => {
+  const onSave = async () => {
     if (!user) return;
     try {
       const payload = result;
@@ -91,7 +91,7 @@ export default function TaxRequestPage() {
         status: "draft",
       });
       if (error) throw error;
-      toast.success("Saved as draft");
+      toast.success("Saved to history");
     } catch (e: any) {
       toast.error(e?.message ?? "Save failed");
     }
@@ -124,7 +124,7 @@ export default function TaxRequestPage() {
   };
 
   const onReset = () => {
-    form.reset({ totalIncome: 0, totalExpense: 0 });
+    form.reset({ totalIncome: undefined, totalExpense: undefined });
     setSelectedYearId(null);
   };
 
@@ -144,7 +144,7 @@ export default function TaxRequestPage() {
                 <Label>Fiscal Year</Label>
                 <Select value={selectedYearId ?? ""} onValueChange={(v) => setSelectedYearId(v)}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
                   <SelectContent>
                     {fiscalYears.map((y) => (
@@ -167,7 +167,7 @@ export default function TaxRequestPage() {
               <Separator />
 
               <div className="flex gap-2">
-                <Button onClick={onSaveDraft}>Save Draft</Button>
+                <Button onClick={onSave}>Save to History</Button>
                 <Button onClick={onSubmitRequest}>Request Officer Review</Button>
                 <Button variant="outline" onClick={onReset}>Reset</Button>
               </div>
