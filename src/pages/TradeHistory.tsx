@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -5,15 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/browserClient";
 import { useAuth } from "@/providers/auth-provider";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-
-// pdfMake & fonts
-let pdfMake: any;
-if (typeof window !== "undefined") {
-  pdfMake = require("pdfmake/build/pdfmake");
-  const pdfFonts = require("pdfmake/build/vfs_fonts");
-  pdfMake.vfs = pdfFonts.pdfMake.vfs;
-}
+import { useState, useEffect } from "react";
 
 type TradeRow = {
   id: string;
@@ -44,7 +38,22 @@ async function fetchMyTrade(userId: string): Promise<TradeRow[]> {
 export default function TradeHistoryPage() {
   const { user } = useAuth();
   const [page, setPage] = useState(0);
+  const [pdfReady, setPdfReady] = useState(false);
+  const [pdfMake, setPdfMake] = useState<any>(null);
   const pageSize = 20;
+
+  // Dynamically import pdfMake only on client
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("pdfmake/build/pdfmake").then((pdf) => {
+        import("pdfmake/build/vfs_fonts").then((fonts) => {
+          pdf.vfs = fonts.pdfMake.vfs;
+          setPdfMake(pdf);
+          setPdfReady(true);
+        });
+      });
+    }
+  }, []);
 
   const q = useQuery({
     queryKey: ["trade_history", user?.id ?? null],
@@ -55,14 +64,13 @@ export default function TradeHistoryPage() {
   const rows = q.data ?? [];
   const paginatedRows = rows.slice(page * pageSize, (page + 1) * pageSize);
 
-  // Total calculation
   const totalAmount = rows.reduce((acc, r) => acc + r.amount, 0);
   const totalTax = rows.reduce((acc, r) => acc + r.calculated_tax, 0);
   const finalTotal = totalAmount + totalTax;
 
   // PDF download
   const downloadPDF = () => {
-    if (!rows.length) return;
+    if (!rows.length || !pdfMake) return;
 
     const body = [
       ["Date", "Type", "Country", "Category", "Product", "Amount (৳)", "Tax (৳)"],
@@ -83,8 +91,6 @@ export default function TradeHistoryPage() {
       content: [
         { text: "NEXT TAX Import / Export", style: "header" },
         { text: `Generated: ${new Date().toLocaleString()}\n\n`, style: "subheader" },
-
-        // Table
         {
           table: {
             headerRows: 1,
@@ -92,7 +98,6 @@ export default function TradeHistoryPage() {
             body: body,
           },
         },
-
         { text: "\nSummary", style: "subheader2" },
         {
           table: {
@@ -107,7 +112,6 @@ export default function TradeHistoryPage() {
             ],
           },
           layout: "lightHorizontalLines",
-          margin: [0, 0, 0, 0],
         },
       ],
       styles: {
@@ -129,7 +133,7 @@ export default function TradeHistoryPage() {
             <p className="mt-2 text-muted-foreground">Your saved import/export records.</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={downloadPDF} disabled={rows.length === 0}>
+            <Button onClick={downloadPDF} disabled={!pdfReady || rows.length === 0}>
               Download PDF
             </Button>
             <Button asChild>
