@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +17,6 @@ import { z } from "zod";
 
 type Country = { id: string; name: string; code: string; import_tax_rate: number; export_tax_rate: number };
 type Category = { id: string; name: string; base_tax_rate: number };
-
 type FxRow = { code: string; rate: number };
 
 const formSchema = z.object({
@@ -121,7 +122,7 @@ export default function TradeCalculatorPage() {
         category_id: category?.id ?? "",
         product_name: productName.trim(),
         amount,
-        declared_value: amount, // <-- declared_value added
+        declared_value: amount,
         calculated_tax: calc.calculatedTax,
         calculation_data: {
           rate: calc.rate,
@@ -149,15 +150,19 @@ export default function TradeCalculatorPage() {
       <div className="container py-10">
         <div className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">Import / Export Calculator</h1>
-          <p className="mt-2 text-muted-foreground">Select country and product category to calculate duty/tax and save records.</p>
+          <p className="mt-2 text-muted-foreground">
+            Select country and product category to calculate duty/tax and save records.
+          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
+          {/* Input Card */}
           <Card className="shadow-[var(--shadow-elev)]">
             <CardHeader>
               <CardTitle>Inputs</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Type */}
               <div className="grid gap-2">
                 <Label>Type</Label>
                 <Select value={type} onValueChange={(v) => setType(v as TradeType)}>
@@ -171,6 +176,7 @@ export default function TradeCalculatorPage() {
                 </Select>
               </div>
 
+              {/* Country */}
               <div className="grid gap-2">
                 <Label>Country</Label>
                 <Select value={countryId} onValueChange={setCountryId}>
@@ -187,6 +193,7 @@ export default function TradeCalculatorPage() {
                 </Select>
               </div>
 
+              {/* Category */}
               <div className="grid gap-2">
                 <Label>Product category</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
@@ -203,11 +210,18 @@ export default function TradeCalculatorPage() {
                 </Select>
               </div>
 
+              {/* Product Name */}
               <div className="grid gap-2">
                 <Label htmlFor="product">Product name</Label>
-                <Input id="product" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g. Machinery" />
+                <Input
+                  id="product"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="e.g. Machinery"
+                />
               </div>
 
+              {/* Amount */}
               <div className="grid gap-2">
                 <Label>{currency === "USD" ? "Amount (USD)" : "Amount (BDT)"}</Label>
                 <div className="grid gap-2 sm:grid-cols-3">
@@ -223,18 +237,32 @@ export default function TradeCalculatorPage() {
                     </Select>
                   </div>
                   <div className="sm:col-span-2">
-                    <Input id="amount" inputMode="decimal" value={amountInput} onChange={(e) => setAmountInput(e.target.value)} />
+                    <Input
+                      id="amount"
+                      inputMode="decimal"
+                      value={amountInput}
+                      onChange={(e) => setAmountInput(e.target.value)}
+                    />
                   </div>
                 </div>
-                {currency === "USD" ? (
-                  <p className="text-xs text-muted-foreground">USD→BDT rate: {usdToBdt.toFixed(2)} (editable by admin)</p>
-                ) : null}
+                {currency === "USD" && (
+                  <p className="text-xs text-muted-foreground">USD→BDT rate: {usdToBdt.toFixed(2)}</p>
+                )}
               </div>
 
               <Separator />
 
+              {/* Calculation Display */}
               <div className="rounded-lg border bg-card/50 p-4">
                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Country rate</span>
+                  <span className="font-medium">{countryRate.toFixed(2)}%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Category rate</span>
+                  <span className="font-medium">{categoryRate.toFixed(2)}%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm mt-2">
                   <span className="text-muted-foreground">Total rate</span>
                   <span className="font-medium">{calc.rate.toFixed(2)}%</span>
                 </div>
@@ -242,14 +270,17 @@ export default function TradeCalculatorPage() {
                   <span className="text-muted-foreground">Calculated tax</span>
                   <span className="text-xl font-semibold">৳ {formatBDT(calc.calculatedTax)}</span>
                 </div>
-                {currency === "USD" ? (
-                  <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Converted amount</span>
-                    <span className="font-medium">৳ {formatBDT(amount)}</span>
-                  </div>
-                ) : null}
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="text-xl font-semibold">৳ {formatBDT(amount)}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-lg">
+                  <span className="text-muted-foreground font-medium">Final (Amount + Tax)</span>
+                  <span className="font-bold text-green-600">৳ {formatBDT(amount + calc.calculatedTax)}</span>
+                </div>
               </div>
 
+              {/* Buttons */}
               <div className="flex gap-2">
                 <Button onClick={onSave} disabled={!canSave || saving}>
                   {saving ? "Saving..." : "Save to history"}
@@ -261,6 +292,7 @@ export default function TradeCalculatorPage() {
             </CardContent>
           </Card>
 
+          {/* Rates Breakdown Card */}
           <Card className="shadow-[var(--shadow-elev)]">
             <CardHeader>
               <CardTitle>Rates breakdown</CardTitle>
