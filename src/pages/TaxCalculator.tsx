@@ -71,24 +71,18 @@ export default function TaxRequestPage() {
 
   const formatBDT = (n: number) => new Intl.NumberFormat("en-BD", { maximumFractionDigits: 2 }).format(n);
 
+  // Save to History → Dashboard (tax_calculations table)
   const onSave = async () => {
     if (!user) return;
     try {
       const payload = result;
-      const { error } = await supabase.from("tax_requests").insert({
-        citizen_id: user.id,
+      const { error } = await supabase.from("tax_calculations").insert({
+        user_id: user.id,
         fiscal_year: payload.fiscalYear,
         total_income: payload.totalIncome,
         total_expense: payload.totalExpense,
         taxable_income: payload.taxableIncome,
         calculated_tax: payload.calculatedTax,
-        calculation_data: JSON.stringify({
-          totalIncome: payload.totalIncome,
-          totalExpense: payload.totalExpense,
-          taxableIncome: payload.taxableIncome,
-          breakdown: payload.breakdown,
-        }),
-        status: "draft",
       });
       if (error) throw error;
       toast.success("Saved to history");
@@ -97,6 +91,7 @@ export default function TaxRequestPage() {
     }
   };
 
+  // Request Officer Review → tax_requests table
   const onSubmitRequest = async () => {
     if (!user) return;
     try {
