@@ -16,12 +16,23 @@ import { toast } from "sonner";
 type FiscalYear = { id: string; year_label: string };
 type TaxSlab = { id: string; slab_from: number; slab_to: number | null; rate: number };
 type TaxBreakdown = { from: number; to: number | null; amountInSlab: number; taxForSlab: number };
+type TaxRequest = {
+  id: string;
+  fiscal_year: string;
+  total_income: number;
+  total_expense: number;
+  taxable_income: number;
+  calculated_tax: number;
+  status: string;
+  citizen?: { full_name: string; tin_number: string; email: string };
+};
 
 export default function TaxRequestPage() {
   const { user } = useAuth();
   const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([]);
   const [selectedYearId, setSelectedYearId] = useState<string | null>(null);
   const [taxSlabs, setTaxSlabs] = useState<TaxSlab[]>([]);
+  const [requests, setRequests] = useState<TaxRequest[]>([]);
 
   const form = useForm<{ totalIncome: number; totalExpense: number }>({
     defaultValues: { totalIncome: undefined, totalExpense: undefined },
@@ -86,12 +97,13 @@ export default function TaxRequestPage() {
       });
       if (error) throw error;
       toast.success("Saved to history");
+      fetchRequests();
     } catch (e: any) {
       toast.error(e?.message ?? "Save failed");
     }
   };
 
-  // Request Officer Review → tax_requests table with citizen info
+  // Request Officer Review → tax_requests table
   const onSubmitRequest = async () => {
     if (!user) return;
     try {
@@ -113,6 +125,7 @@ export default function TaxRequestPage() {
       });
       if (error) throw error;
       toast.success("Request submitted for officer review");
+      fetchRequests();
     } catch (e: any) {
       toast.error(e?.message ?? "Submit failed");
     }
@@ -122,6 +135,30 @@ export default function TaxRequestPage() {
     form.reset({ totalIncome: undefined, totalExpense: undefined });
     setSelectedYearId(null);
   };
+
+  // Fetch requests for this user
+  const fetchRequests = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("tax_requests")
+      .select(`
+        *,
+        citizen:citizen_id (
+          full_name,
+          tin_number,
+          email
+        )
+      `)
+      .eq("citizen_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) console.log(error);
+    else setRequests(data ?? []);
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, [user]);
 
   return (
     <AppShell>
@@ -200,6 +237,31 @@ export default function TaxRequestPage() {
                 <div>Taxable Income: ৳ {formatBDT(result.taxableIncome)}</div>
                 <div>Calculated Tax: ৳ {formatBDT(result.calculatedTax)}</div>
               </div>
+
+              <Separator className="my-4" />
+
+              {/* User Requests Table */}
+              <h2 className="text-xl font-semibold mb-2">Your Requests</h2>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fiscal Year</TableHead>
+                    <TableHead>Citizen Name</TableHead>
+                    <TableHead>TIN</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requests.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>{r.fiscal_year}</TableCell>
+                      <TableCell>{r.citizen?.full_name}</TableCell>
+                      <TableCell>{r.citizen?.tin_number}</TableCell>
+                      <TableCell>{r.status}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
