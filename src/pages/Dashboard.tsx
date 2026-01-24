@@ -75,7 +75,7 @@ export default function Dashboard() {
   const handlePdfDownload = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text("Tax History Report", 14, 20);
+    doc.text("NEXT-TAX Report", 14, 20);
 
     // Table
     autoTable(doc, {
