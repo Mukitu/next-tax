@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/browserClient";
 import { useAuth } from "@/providers/auth-provider";
-import { useEffect } from "react";
 import { toast } from "sonner";
 import {
   LineChart,
@@ -36,6 +35,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [requests, setRequests] = useState<TaxRequest[]>([]);
   const [loading, setLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchRequests = async () => {
     if (!user) return;
@@ -59,7 +59,6 @@ export default function Dashboard() {
     fetchRequests();
   }, [user]);
 
-  // Chart data
   const chartData = requests.map((r) => ({
     name: new Date(r.created_at).toLocaleDateString(),
     Income: r.total_income,
@@ -81,37 +80,19 @@ export default function Dashboard() {
     }
   };
 
-  // Sticky Navbar
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
     <AppShell>
-      {/* Sticky Top Bar */}
-      <div className="sticky top-0 z-50 bg-white shadow-lg border-b">
-        <div className="container mx-auto flex items-center justify-between py-3 px-4 md:px-0">
+      {/* Mobile-only Sticky Top Bar */}
+      <div className="flex md:hidden flex-col sticky top-0 z-50 bg-white shadow-lg border-b">
+        <div className="flex items-center justify-between py-3 px-4">
           <div className="text-xl font-bold text-blue-600">NEXT TAX</div>
-
-          {/* Desktop Menu */}
-          <div className="hidden md:flex gap-6 font-medium text-gray-700">
-            <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
-            <a href="/guide" className="hover:text-blue-600 transition-colors">Guide</a>
-            <a href="/team" className="hover:text-blue-600 transition-colors">Team</a>
-            <a href="/dashboard" className="hover:text-blue-600 transition-colors">Dashboard</a>
-            <a href="/tax" className="hover:text-blue-600 transition-colors">Tax Calculator</a>
-            <a href="/trade" className="hover:text-blue-600 transition-colors">Import/Export</a>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <Button size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? "Close" : "Menu"}
-            </Button>
-          </div>
+          <Button size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? "Close" : "Menu"}
+          </Button>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden flex flex-col gap-2 py-2 px-4 border-t bg-white shadow-md">
+          <div className="flex flex-col gap-2 py-2 px-4 border-t bg-white shadow-md">
             <a href="/" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Home</a>
             <a href="/guide" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Guide</a>
             <a href="/team" className="hover:text-blue-600" onClick={() => setMobileMenuOpen(false)}>Team</a>
