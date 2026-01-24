@@ -63,7 +63,6 @@ export default function TradeHistoryPage() {
   const downloadPDF = () => {
     if (!rows.length) return;
 
-    // Summary for PDF
     const totalAmount = rows.reduce((acc, r) => acc + r.amount, 0);
     const totalTax = rows.reduce((acc, r) => acc + r.calculated_tax, 0);
 
@@ -87,7 +86,6 @@ export default function TradeHistoryPage() {
         { text: "NEXT TAX Import / Export", style: "header" },
         { text: `Generated: ${new Date().toLocaleString()}\n\n`, style: "subheader" },
 
-        // Summary
         {
           columns: [
             { text: `Total Amount: ৳ ${formatBDT(totalAmount)}`, bold: true },
@@ -97,7 +95,6 @@ export default function TradeHistoryPage() {
           margin: [0, 0, 0, 10],
         },
 
-        // Table
         {
           table: {
             headerRows: 1,
