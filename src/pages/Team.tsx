@@ -87,7 +87,7 @@ function HexCard({ member }: { member: Member }) {
           {member.name}
         </p>
         {member.link && (
-          
+          <a
             href={member.link}
             target="_blank"
             rel="noreferrer"
@@ -107,22 +107,12 @@ export default function TeamPage() {
   return (
     <AppShell>
       <section className="relative overflow-hidden bg-gradient-to-br from-gray-200 via-gray-100 to-gray-300 min-h-screen py-16">
-        {/* Background geometric diamonds */}
-        <div
-          className="absolute -top-16 -left-16 w-56 h-56 bg-white/20 rotate-45 pointer-events-none"
-        />
-        <div
-          className="absolute -top-20 -right-8 w-72 h-72 bg-white/15 rotate-45 pointer-events-none"
-        />
-        <div
-          className="absolute -bottom-20 -right-16 w-80 h-80 bg-white/10 rotate-45 pointer-events-none"
-        />
-        <div
-          className="absolute -bottom-10 -left-12 w-48 h-48 bg-white/15 rotate-45 pointer-events-none"
-        />
+        <div className="absolute -top-16 -left-16 w-56 h-56 bg-white/20 rotate-45 pointer-events-none" />
+        <div className="absolute -top-20 -right-8 w-72 h-72 bg-white/15 rotate-45 pointer-events-none" />
+        <div className="absolute -bottom-20 -right-16 w-80 h-80 bg-white/10 rotate-45 pointer-events-none" />
+        <div className="absolute -bottom-10 -left-12 w-48 h-48 bg-white/15 rotate-45 pointer-events-none" />
 
         <div className="container mx-auto px-6 max-w-3xl">
-          {/* Title */}
           <div className="text-center mb-14">
             <h1 className="text-4xl font-extrabold tracking-widest text-gray-900 uppercase">
               {t("team.title")}
@@ -132,7 +122,6 @@ export default function TeamPage() {
             </p>
           </div>
 
-          {/* 3x3 Grid */}
           <div className="grid grid-cols-3 grid-rows-3 gap-y-6 gap-x-2 items-center justify-items-center">
             {layoutMembers.map(({ member, col, row }) => (
               <div
@@ -143,7 +132,6 @@ export default function TeamPage() {
               </div>
             ))}
 
-            {/* Fahad - center */}
             <div className="col-start-2 row-start-2 flex items-center justify-center">
               <HexCard member={centerMember} />
             </div>
