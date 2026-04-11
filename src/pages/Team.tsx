@@ -16,43 +16,40 @@ type Member = {
 
 const hexClip = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
 
-const centerMember: Member = {
-  name: "Fahad",
-  role: "Team Leader",
-  image: fahad,
-  size: "md",
-};
+const topRow: Member[] = [
+  {
+    name: "Rayhan",
+    role: "Designer",
+    image: rayhan,
+    size: "sm",
+  },
+  {
+    name: "Mukitu",
+    role: "Full Stack Developer",
+    image: nishat,
+    size: "sm",
+    link: "https://mukituislamnishat.vercel.app/",
+  },
+];
 
-const layoutMembers: {
-  member: Member;
-  col: string;
-  row: string;
-}[] = [
+const bottomRow: Member[] = [
   {
-    member: { name: "Rayhan", role: "Designer", image: rayhan, size: "sm" },
-    col: "col-start-2",
-    row: "row-start-1",
+    name: "Raisul",
+    role: "Content Writer",
+    image: raisul,
+    size: "sm",
   },
   {
-    member: {
-      name: "Mukitu",
-      role: "Full Stack Developer",
-      image: nishat,
-      size: "sm",
-      link: "https://mukituislamnishat.vercel.app/",
-    },
-    col: "col-start-3",
-    row: "row-start-1",
+    name: "Fahad",
+    role: "Team Leader",
+    image: fahad,
+    size: "md",
   },
   {
-    member: { name: "Raisul", role: "Content Writer", image: raisul, size: "sm" },
-    col: "col-start-1",
-    row: "row-start-2",
-  },
-  {
-    member: { name: "Aisha", role: "Documentation", image: esha, size: "sm" },
-    col: "col-start-3",
-    row: "row-start-3",
+    name: "Aisha",
+    role: "Documentation",
+    image: esha,
+    size: "sm",
   },
 ];
 
@@ -122,19 +119,16 @@ export default function TeamPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 grid-rows-3 gap-y-6 gap-x-2 items-center justify-items-center">
-            {layoutMembers.map(({ member, col, row }) => (
-              <div
-                key={member.name}
-                className={`${col} ${row} flex items-center justify-center`}
-              >
-                <HexCard member={member} />
-              </div>
+          <div className="flex justify-center gap-16 mb-12">
+            {topRow.map((member) => (
+              <HexCard key={member.name} member={member} />
             ))}
+          </div>
 
-            <div className="col-start-2 row-start-2 flex items-center justify-center">
-              <HexCard member={centerMember} />
-            </div>
+          <div className="flex justify-center gap-12">
+            {bottomRow.map((member) => (
+              <HexCard key={member.name} member={member} />
+            ))}
           </div>
         </div>
       </section>
