@@ -55,12 +55,12 @@ const bottomRow: Member[] = [
 
 function HexCard({ member }: { member: Member }) {
   const isLarge = member.size === "md";
-  const imgSize = isLarge ? "w-32 h-36" : "w-24 h-28";
+  const imgSize = isLarge ? "w-64 h-72" : "w-48 h-56";
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-3">
       <div
-        className={`${imgSize} p-[3px] bg-gray-400`}
+        className={`${imgSize} p-[4px] bg-gray-400`}
         style={{ clipPath: hexClip }}
       >
         <div
@@ -77,10 +77,10 @@ function HexCard({ member }: { member: Member }) {
       </div>
 
       <div className="text-center">
-        <p className={`text-gray-500 font-medium ${isLarge ? "text-sm" : "text-xs"}`}>
+        <p className={`text-gray-500 font-medium ${isLarge ? "text-base" : "text-sm"}`}>
           {member.role}
         </p>
-        <p className={`text-gray-900 font-bold ${isLarge ? "text-base" : "text-sm"}`}>
+        <p className={`text-gray-900 font-bold ${isLarge ? "text-xl" : "text-lg"}`}>
           {member.name}
         </p>
         {member.link && (
@@ -88,7 +88,7 @@ function HexCard({ member }: { member: Member }) {
             href={member.link}
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-blue-600 underline mt-1 inline-block"
+            className="text-sm text-blue-600 underline mt-1 inline-block"
           >
             Website
           </a>
@@ -109,7 +109,7 @@ export default function TeamPage() {
         <div className="absolute -bottom-20 -right-16 w-80 h-80 bg-white/10 rotate-45 pointer-events-none" />
         <div className="absolute -bottom-10 -left-12 w-48 h-48 bg-white/15 rotate-45 pointer-events-none" />
 
-        <div className="container mx-auto px-6 max-w-3xl">
+        <div className="container mx-auto px-6 max-w-5xl">
           <div className="text-center mb-14">
             <h1 className="text-4xl font-extrabold tracking-widest text-gray-900 uppercase">
               {t("team.title")}
@@ -119,13 +119,13 @@ export default function TeamPage() {
             </p>
           </div>
 
-          <div className="flex justify-center gap-16 mb-12">
+          <div className="flex justify-center gap-20 mb-16">
             {topRow.map((member) => (
               <HexCard key={member.name} member={member} />
             ))}
           </div>
 
-          <div className="flex justify-center gap-12">
+          <div className="flex justify-center gap-16">
             {bottomRow.map((member) => (
               <HexCard key={member.name} member={member} />
             ))}
