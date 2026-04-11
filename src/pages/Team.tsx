@@ -14,6 +14,8 @@ type Member = {
   size?: "sm" | "md";
 };
 
+const hexClip = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+
 const centerMember: Member = {
   name: "Fahad",
   role: "Team Leader",
@@ -23,13 +25,13 @@ const centerMember: Member = {
 
 const layoutMembers: {
   member: Member;
-  gridCol: string;
-  gridRow: string;
+  col: string;
+  row: string;
 }[] = [
   {
     member: { name: "Rayhan", role: "Designer", image: rayhan, size: "sm" },
-    gridCol: "col-start-2",
-    gridRow: "row-start-1",
+    col: "col-start-2",
+    row: "row-start-1",
   },
   {
     member: {
@@ -39,23 +41,20 @@ const layoutMembers: {
       size: "sm",
       link: "https://mukituislamnishat.vercel.app/",
     },
-    gridCol: "col-start-3",
-    gridRow: "row-start-1",
+    col: "col-start-3",
+    row: "row-start-1",
   },
   {
     member: { name: "Raisul", role: "Content Writer", image: raisul, size: "sm" },
-    gridCol: "col-start-1",
-    gridRow: "row-start-2",
+    col: "col-start-1",
+    row: "row-start-2",
   },
   {
     member: { name: "Aisha", role: "Documentation", image: esha, size: "sm" },
-    gridCol: "col-start-3",
-    gridRow: "row-start-3",
+    col: "col-start-3",
+    row: "row-start-3",
   },
 ];
-
-// Hexagon clip-path via inline style
-const hexClip = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
 
 function HexCard({ member }: { member: Member }) {
   const isLarge = member.size === "md";
@@ -63,12 +62,10 @@ function HexCard({ member }: { member: Member }) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Hex border wrapper */}
       <div
         className={`${imgSize} p-[3px] bg-gray-400`}
         style={{ clipPath: hexClip }}
       >
-        {/* Inner hex image */}
         <div
           className="w-full h-full overflow-hidden"
           style={{ clipPath: hexClip }}
@@ -135,24 +132,21 @@ export default function TeamPage() {
             </p>
           </div>
 
-          {/* Grid layout — 3 cols × 3 rows */}
+          {/* 3x3 Grid */}
           <div className="grid grid-cols-3 grid-rows-3 gap-y-6 gap-x-2 items-center justify-items-center">
-
-            {/* Dynamic members */}
-            {layoutMembers.map(({ member, gridCol, gridRow }) => (
+            {layoutMembers.map(({ member, col, row }) => (
               <div
                 key={member.name}
-                className={`${gridCol} ${gridRow} flex items-center justify-center`}
+                className={`${col} ${row} flex items-center justify-center`}
               >
                 <HexCard member={member} />
               </div>
             ))}
 
-            {/* Center: Fahad - col2, row2 */}
+            {/* Fahad - center */}
             <div className="col-start-2 row-start-2 flex items-center justify-center">
               <HexCard member={centerMember} />
             </div>
-
           </div>
         </div>
       </section>
