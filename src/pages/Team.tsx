@@ -1,6 +1,4 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import nishat from "@/assets/team/nishat.jpg";
 import fahad from "@/assets/team/fahad.jpg";
 import rayhan from "@/assets/team/rayhan.jpg";
@@ -13,46 +11,96 @@ type Member = {
   role: string;
   image: string;
   link?: string;
+  size?: "sm" | "md";
 };
 
-const topMember: Member = {
-  name: "Mukitu Islam Nishat",
-  role: "Full Stack Developer",
-  image: nishat,
-  link: "https://mukituislamnishat.vercel.app/",
+const centerMember: Member = {
+  name: "Fahad",
+  role: "Team Leader",
+  image: fahad,
+  size: "md",
 };
 
-const members: Member[] = [
-  { name: "Fahad Bin Aref", role: "Designer", image: fahad },
-  { name: "Rayhan Kobir Shah", role: "Planner", image: rayhan },
-  { name: "Md Raisul", role: "Project Manager", image: raisul },
-  { name: "Israt Jahan Aisha", role: "Documentation", image: esha },
+const layoutMembers: {
+  member: Member;
+  gridCol: string;
+  gridRow: string;
+}[] = [
+  {
+    member: { name: "Rayhan", role: "Designer", image: rayhan, size: "sm" },
+    gridCol: "col-start-2",
+    gridRow: "row-start-1",
+  },
+  {
+    member: {
+      name: "Mukitu",
+      role: "Full Stack Developer",
+      image: nishat,
+      size: "sm",
+      link: "https://mukituislamnishat.vercel.app/",
+    },
+    gridCol: "col-start-3",
+    gridRow: "row-start-1",
+  },
+  {
+    member: { name: "Raisul", role: "Content Writer", image: raisul, size: "sm" },
+    gridCol: "col-start-1",
+    gridRow: "row-start-2",
+  },
+  {
+    member: { name: "Aisha", role: "Documentation", image: esha, size: "sm" },
+    gridCol: "col-start-3",
+    gridRow: "row-start-3",
+  },
 ];
 
-function MemberCard({ m, highlight }: { m: Member; highlight?: boolean }) {
+// Hexagon clip-path via inline style
+const hexClip = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+
+function HexCard({ member }: { member: Member }) {
+  const isLarge = member.size === "md";
+  const imgSize = isLarge ? "w-32 h-36" : "w-24 h-28";
+
   return (
-    <Card className={`overflow-hidden ${highlight ? "shadow-xl border-primary/20" : "shadow-md border"}`}>
-      <CardHeader className="flex flex-col items-center">
+    <div className="flex flex-col items-center gap-2">
+      {/* Hex border wrapper */}
+      <div
+        className={`${imgSize} p-[3px] bg-gray-400`}
+        style={{ clipPath: hexClip }}
+      >
+        {/* Inner hex image */}
         <div
-          className={`overflow-hidden rounded-full ${
-            highlight ? "h-28 w-28 ring-2 ring-primary/30" : "h-20 w-20 ring-1 ring-border"
-          }`}
+          className="w-full h-full overflow-hidden"
+          style={{ clipPath: hexClip }}
         >
-          <img src={m.image} alt={`${m.name} photo`} className="h-full w-full object-cover" loading="lazy" />
+          <img
+            src={member.image}
+            alt={member.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         </div>
-        <CardTitle className={`${highlight ? "text-xl mt-4 text-center" : "text-base mt-2"}`}>{m.name}</CardTitle>
-      </CardHeader>
-      <CardContent className={`${highlight ? "text-center" : "text-left"}`}>
-        <div className="text-sm text-muted-foreground">{m.role}</div>
-        {m.link && (
-          <Button asChild variant="outline" size="sm" className="mt-3">
-            <a href={m.link} target="_blank" rel="noreferrer">
-              Website
-            </a>
-          </Button>
+      </div>
+
+      <div className="text-center">
+        <p className={`text-gray-500 font-medium ${isLarge ? "text-sm" : "text-xs"}`}>
+          {member.role}
+        </p>
+        <p className={`text-gray-900 font-bold ${isLarge ? "text-base" : "text-sm"}`}>
+          {member.name}
+        </p>
+        {member.link && (
+          
+            href={member.link}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-blue-600 underline mt-1 inline-block"
+          >
+            Website
+          </a>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -61,24 +109,50 @@ export default function TeamPage() {
 
   return (
     <AppShell>
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/80 to-primary/50 py-12">
-        <div className="container mx-auto px-4">
+      <section className="relative overflow-hidden bg-gradient-to-br from-gray-200 via-gray-100 to-gray-300 min-h-screen py-16">
+        {/* Background geometric diamonds */}
+        <div
+          className="absolute -top-16 -left-16 w-56 h-56 bg-white/20 rotate-45 pointer-events-none"
+        />
+        <div
+          className="absolute -top-20 -right-8 w-72 h-72 bg-white/15 rotate-45 pointer-events-none"
+        />
+        <div
+          className="absolute -bottom-20 -right-16 w-80 h-80 bg-white/10 rotate-45 pointer-events-none"
+        />
+        <div
+          className="absolute -bottom-10 -left-12 w-48 h-48 bg-white/15 rotate-45 pointer-events-none"
+        />
+
+        <div className="container mx-auto px-6 max-w-3xl">
           {/* Title */}
-          <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{t("team.title")}</h1>
-            <p className="mt-2 text-gray-100 max-w-2xl mx-auto">{t("team.subtitle")}</p>
+          <div className="text-center mb-14">
+            <h1 className="text-4xl font-extrabold tracking-widest text-gray-900 uppercase">
+              {t("team.title")}
+            </h1>
+            <p className="mt-1 text-xs font-semibold text-gray-500 tracking-[0.2em] uppercase">
+              {t("team.subtitle")}
+            </p>
           </div>
 
-          {/* Top Member */}
-          <div className="mx-auto max-w-xs md:max-w-sm mb-12">
-            <MemberCard m={topMember} highlight />
-          </div>
+          {/* Grid layout — 3 cols × 3 rows */}
+          <div className="grid grid-cols-3 grid-rows-3 gap-y-6 gap-x-2 items-center justify-items-center">
 
-          {/* Other Members */}
-          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2">
-            {members.map((m) => (
-              <MemberCard key={m.name} m={m} />
+            {/* Dynamic members */}
+            {layoutMembers.map(({ member, gridCol, gridRow }) => (
+              <div
+                key={member.name}
+                className={`${gridCol} ${gridRow} flex items-center justify-center`}
+              >
+                <HexCard member={member} />
+              </div>
             ))}
+
+            {/* Center: Fahad - col2, row2 */}
+            <div className="col-start-2 row-start-2 flex items-center justify-center">
+              <HexCard member={centerMember} />
+            </div>
+
           </div>
         </div>
       </section>
