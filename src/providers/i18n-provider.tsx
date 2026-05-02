@@ -15,8 +15,7 @@ const dict: Dict = {
   "nav.logout": { en: "Logout", bn: "লগআউট" },
 
   "footer.rights": { en: "© 2026–2027 NEXT TAX. All rights reserved.", bn: "© ২০২৬–২০২৭ NEXT TAX. সর্বস্বত্ব সংরক্ষিত।" },
-  "footer.madeby": { en: "Made by Nishat (Full Stack Software Developer)", bn: "তৈরি করেছেন নিশাত (ফুল স্ট্যাক সফটওয়্যার ডেভেলপার)" },
-
+ 
   "home.title": {
     en: "Government-grade tax calculation & management",
     bn: "সরকারি মানের ট্যাক্স ক্যালকুলেশন ও ম্যানেজমেন্ট",
