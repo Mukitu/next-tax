@@ -15,7 +15,7 @@ const dict: Dict = {
   "nav.logout": { en: "Logout", bn: "লগআউট" },
 
   "footer.rights": { en: "© 2026–2027 NEXT TAX. All rights reserved.", bn: "© ২০২৬–২০২৭ NEXT TAX. সর্বস্বত্ব সংরক্ষিত।" },
-  "footer.madeby": { en: "Made by NEXTTAX team", bn: "Made by NEXTTAX team" },
+  "footer.madeby": { en: "Made by NEXTTAX team", bn: "নেক্সট ট্যাক্স টিম দ্বারা নির্মিত" },
  
  
   "home.title": {
